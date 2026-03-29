@@ -7,10 +7,42 @@ import json
 
 from config import LANGUAGES, LANGUAGE_CODES
 from sarvam_api import transcribe_audio, get_llm_advisory, get_tts_audio
-from db import save_chat
+from db import save_chat, get_chat_history
 from weather_service import get_weather, generate_alert
+from pest_logic import report_pest
 
 app = FastAPI(title="FarmGPT API")
+
+@app.post("/api/report_pest")
+async def report_pest_endpoint(data: dict):
+    """
+    Receives pest report from user (lat, lon, disease_id).
+    Enriches with weather data and checks for community outbreak.
+    """
+    lat, lon, disease_id = data.get("lat"), data.get("lon"), data.get("disease_id")
+    user_id = data.get("user_id", "anonymous_user_1")
+    
+    if lat is None or lon is None or disease_id is None:
+        return JSONResponse({"error": "Missing coordinates or disease_id"}, status_code=400)
+    
+    # 1. Fetch current weather for data enrichment
+    weather = get_weather(lat, lon)
+    # Open-Meteo doesn't give humidity in the 'current_weather' summary by default, 
+    # but I'll pass it as a dummy or fetch it from the API if needed. 
+    # For now, I'll stick to temp/windspeed already available.
+    
+    # 2. Log report and check for nearby outbreaks
+    is_outbreak, notifications_sent = report_pest(user_id, lat, lon, disease_id, weather)
+    
+    return {
+        "status": "success",
+        "outbreak_detected": is_outbreak,
+        "notifications_queued": notifications_sent
+    }
+
+@app.get("/api/history")
+async def get_history_endpoint(user_id: str = "anonymous_user_1"):
+    return get_chat_history(user_id)
 
 # Persistent memory for the current user's climate context
 user_session_metadata = {
@@ -56,7 +88,8 @@ async def chat_endpoint(
     text: str = Form(None),
     audio: UploadFile = File(None),
     history: str = Form("[]"),
-    language: str = Form("Hindi")
+    language: str = Form("Hindi"),
+    user_id: str = Form("anonymous_user_1")
 ):
     try:
         chat_history = json.loads(history)
@@ -76,9 +109,9 @@ async def chat_endpoint(
         weather_ctx = user_session_metadata["weather"]
         reply = get_llm_advisory(user_query, chat_history, language, weather_ctx)
         
-        # 3. BACKGROUND TASKS: Log to DB without blocking response
-        background_tasks.add_task(save_chat, "anonymous_user_1", "user", user_query, language)
-        background_tasks.add_task(save_chat, "anonymous_user_1", "bot", reply, language)
+        # 3. BACKGROUND TASKS: Log to DB using actual USER_ID
+        background_tasks.add_task(save_chat, user_id, "user", user_query, language)
+        background_tasks.add_task(save_chat, user_id, "assistant", reply, language)
         
         return {
             "query": user_query,

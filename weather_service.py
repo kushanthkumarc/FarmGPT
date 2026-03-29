@@ -3,13 +3,20 @@ import requests
 def get_weather(lat, lon):
     """
     Fetches real-time weather using Open-Meteo API.
+    Now includes relative humidity for disease risk assessment.
     """
-    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=relative_humidity_2m,temperature_2m,wind_speed_10m&current_weather=true"
     try:
         response = requests.get(url, timeout=5)
         response.raise_for_status()
         data = response.json()
-        return data.get("current_weather", {})
+        
+        current = data.get("current", {})
+        weather = data.get("current_weather", {})
+        
+        # Merge basic summary with specific humidity data
+        weather['humidity'] = current.get('relative_humidity_2m', 0)
+        return weather
     except Exception as e:
         print(f"Error fetching weather: {e}")
         return None

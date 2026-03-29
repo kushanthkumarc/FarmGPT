@@ -16,18 +16,20 @@
             <div class="header-content">
                 <div class="avatar"><i class="fas fa-leaf"></i></div>
                 <div class="info">
-                    <h2>FarmGPT</h2>
-                    <p>Online</p>
+                    <h2>FarmGPT Advisor</h2>
+                    <p>Online | Climate Aware</p>
                 </div>
             </div>
 
             <div class="lang-selector">
+                <i class="fas fa-plus-circle icon" id="newChatBtn" title="New Chat"
+                    style="margin-right:8px; cursor:pointer;"></i>
                 <select id="langSelect">
                     <option value="Hindi">Hindi (हिंदी)</option>
                     <option value="Bengali">Bengali (বাংলা)</option>
                     <option value="Tamil">Tamil (தமிழ்)</option>
                     <option value="Telugu">Telugu (తెలుగు)</option>
-                    <option value="Marathi">Marathi (मराठी)</option>
+                    <option value="Marathi">Marathi (मਰਾਠੀ)</option>
                     <option value="Gujarati">Gujarati (ગુજરાતી)</option>
                     <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
                     <option value="Malayalam">Malayalam (മലയാളം)</option>
@@ -42,14 +44,7 @@
         <div class="chat-bg">
             <div id="chatBox" class="chat-box">
                 <div class="encryption-notice">
-                    <i class="fas fa-lock"></i> Messages are encrypted end-to-end. No one outside of this chat, not even
-                    WhatsApp, can read or listen to them.
-                </div>
-
-                <div class="message received">
-                    <span class="text">नमस्ते! 🌾<br>I am FarmGPT, your agricultural assistant. How can I help you
-                        today? Ask me about crops, fertilizers, weather, or farming tips!</span>
-                    <span class="time">Now</span>
+                    <i class="fas fa-lock"></i> Messages are archive-synced and secured.
                 </div>
             </div>
         </div>

@@ -9,6 +9,7 @@ const voiceBtn = document.getElementById("voiceBtn");
 const langSelect = document.getElementById("langSelect");
 
 let chatHistory = [];
+let currentUser = new URLSearchParams(window.location.search).get("user") || "anonymous_user_1";
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
@@ -95,8 +96,9 @@ async function sendMessage(text = null, audioBlob = null) {
 
     // Prepare Payload
     const formData = new FormData();
-    formData.append("language", langSelect.value); // Selected language controls OUTPUT completely
+    formData.append("language", langSelect.value);
     formData.append("history", JSON.stringify(chatHistory.slice(-6)));
+    formData.append("user_id", currentUser);
 
     if (text) formData.append("text", text);
     if (audioBlob) formData.append("audio", audioBlob, "recording.webm");
@@ -258,16 +260,51 @@ document.getElementById("locationBtn").addEventListener("click", () => {
     alert("Refreshing your location & weather context... Done!");
 });
 
-// Sync Languages
-fetch("/api/languages")
-    .then(res => res.json())
-    .then(langs => {
-        langSelect.innerHTML = "";
-        for (const [key, val] of Object.entries(langs)) {
-            const opt = document.createElement("option");
-            opt.value = key;
-            opt.textContent = key;
-            if (key.includes("Hindi")) opt.selected = true; // Default
-            langSelect.appendChild(opt);
-        }
+// ❇️ NEW CHAT LOGIC
+document.getElementById("newChatBtn").addEventListener("click", () => {
+    if (confirm("Start a new chat session? Existing history on screen will be cleared.")) {
+        chatBox.innerHTML = `
+            <div class="encryption-notice">
+                <i class="fas fa-lock"></i> Messages are encrypted end-to-end.
+            </div>
+            <div class="message received">
+                <span class="text">नमस्ते! 🌾 Fresh session started. How can I assist you now?</span>
+                <span class="time">Now</span>
+            </div>
+        `;
+        chatHistory = []; // Reset LLM Context
+        console.log("♻️ Chat session reset.");
+    }
+});
+
+// Sync Languages & History
+async function initializeApp() {
+    // 1. Sync Languages
+    const langRes = await fetch("/api/languages");
+    const langs = await langRes.json();
+    langSelect.innerHTML = "";
+    for (const [key, val] of Object.entries(langs)) {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = key;
+        if (key.includes("Hindi")) opt.selected = true;
+        langSelect.appendChild(opt);
+    }
+
+    // 2. Initial History Load
+    loadUserHistory(currentUser);
+}
+
+async function loadUserHistory(user) {
+    chatBox.innerHTML = `
+        <div class="encryption-notice"><i class="fas fa-lock"></i> Archive Synced for: ${user}</div>
+    `;
+    const histRes = await fetch(`/api/history?user_id=${user}`);
+    const history = await histRes.json();
+    chatHistory = history;
+    history.forEach(msg => {
+        appendMessage(msg.content, msg.role === 'user', false);
     });
+}
+
+initializeApp();

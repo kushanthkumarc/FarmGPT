@@ -15,6 +15,18 @@ db = client['FarmGPT'] if client else None
 users_collection = db['users'] if db is not None else None
 chat_history_collection = db['chat_history'] if db is not None else None
 doc_metadata_collection = db['doc_metadata'] if db is not None else None
+pest_reports_collection = db['pest_reports'] if db is not None else None
+
+# Geospatial Indexing for Location-based Alerts
+if pest_reports_collection is not None:
+    try:
+        # Create a 2dsphere index for both reports and users
+        pest_reports_collection.create_index([("location", "2dsphere")])
+        if users_collection is not None:
+            users_collection.create_index([("location", "2dsphere")])
+        print("✅ Geospatial 2dsphere indexes verified for 'pest_reports' and 'users'.")
+    except Exception as e:
+        print(f"Index creation warning: {e}")
 
 # Redis Cache
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -65,3 +77,18 @@ def save_chat(user_id, role, content, language):
             "timestamp": datetime.now()
         })
     except: pass
+def get_chat_history(user_id, limit=20):
+    """Retrieves the last N messages for a specific user from MongoDB."""
+    if chat_history_collection is None: return []
+    try:
+        cursor = chat_history_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
+        history = []
+        for doc in cursor:
+            history.append({
+                "role": doc.get("role"),
+                "content": doc.get("content"),
+                "language": doc.get("language")
+            })
+        return history[::-1] # Reverse back to chronological order
+    except:
+        return []
