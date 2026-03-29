@@ -262,18 +262,19 @@ document.getElementById("locationBtn").addEventListener("click", () => {
 
 // ❇️ NEW CHAT LOGIC
 document.getElementById("newChatBtn").addEventListener("click", () => {
-    if (confirm("Start a new chat session? Existing history on screen will be cleared.")) {
+    if (confirm("Start a new chat session?")) {
         chatBox.innerHTML = `
             <div class="encryption-notice">
-                <i class="fas fa-lock"></i> Messages are encrypted end-to-end.
+                <i class="fas fa-lock"></i> New Session Synced.
             </div>
             <div class="message received">
-                <span class="text">नमस्ते! 🌾 Fresh session started. How can I assist you now?</span>
+                <span class="text">नमस्ते! 🌾 Fresh session started. Synchronizing local climate context...</span>
                 <span class="time">Now</span>
             </div>
         `;
         chatHistory = []; // Reset LLM Context
-        console.log("♻️ Chat session reset.");
+        syncLocation(); // RE-SYNC GPS & WEATHER ON NEW CHAT
+        console.log("♻️ Chat session reset & Syncing GPS.");
     }
 });
 
