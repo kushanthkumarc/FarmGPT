@@ -39,13 +39,14 @@ def transcribe_audio(audio_bytes: bytes) -> str:
         os.unlink(tmp_path)
 
 
-def get_llm_advisory(user_query: str, history: List[Dict], target_language: str) -> str:
+def get_llm_advisory(user_query: str, history: List[Dict], target_language: str, weather: str = "Unspecified") -> str:
     """
     Core AI logic:
     1. Check Redis Cache for identical queries.
     2. RAG retrieval.
-    3. LLM synthesis.
-    4. Save to MongoDB Atlas.
+    3. Weather context integration.
+    4. LLM synthesis.
+    5. Save to MongoDB Atlas.
     """
     if not client:
         raise ValueError("SARVAM_API_KEY missing - configure your environment.")
@@ -61,7 +62,7 @@ def get_llm_advisory(user_query: str, history: List[Dict], target_language: str)
 
     # REFACTORED:
     # 1. System: EXPERT PERSONA + VECTOR KNOWLEDGE (Specific to this QUERY)
-    system_msg = get_formatted_prompt(rag_context, target_language)
+    system_msg = get_formatted_prompt(rag_context, target_language, weather)
     
     # 2. Assembling Message History
     messages = [{"role": "system", "content": system_msg}]

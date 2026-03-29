@@ -230,6 +230,34 @@ voiceBtn.addEventListener("click", async () => {
     }
 });
 
+// 📍 AUTOMATIC GPS & WEATHER SYNC
+function syncLocation() {
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+                const res = await fetch("/api/location", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ lat: latitude, lon: longitude })
+                });
+                const data = await res.json();
+                console.log("📍 Location & Weather Synced:", data.weather);
+            } catch (err) {
+                console.error("GPS Sync Failed");
+            }
+        });
+    }
+}
+
+// Start Sync
+syncLocation();
+
+document.getElementById("locationBtn").addEventListener("click", () => {
+    syncLocation();
+    alert("Refreshing your location & weather context... Done!");
+});
+
 // Sync Languages
 fetch("/api/languages")
     .then(res => res.json())

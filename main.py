@@ -8,8 +8,16 @@ import json
 from config import LANGUAGES, LANGUAGE_CODES
 from sarvam_api import transcribe_audio, get_llm_advisory, get_tts_audio
 from db import save_chat
+from weather_service import get_weather, generate_alert
 
 app = FastAPI(title="FarmGPT API")
+
+# Persistent memory for the current user's climate context
+user_session_metadata = {
+    "lat": None,
+    "lon": None,
+    "weather": "Location not yet shared."
+}
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +30,21 @@ app.add_middleware(
 os.makedirs("static", exist_ok=True)
 app.mount("/client", StaticFiles(directory="static", html=True), name="static")
 
+@app.post("/api/location")
+async def set_location(data: dict):
+    lat, lon = data.get("lat"), data.get("lon")
+    if lat is None or lon is None:
+        return JSONResponse({"error": "Missing coordinates"}, status_code=400)
+    
+    user_session_metadata["lat"], user_session_metadata["lon"] = lat, lon
+    
+    # Refresh weather context
+    weather = get_weather(lat, lon)
+    if weather:
+        alert = generate_alert(weather)
+        user_session_metadata["weather"] = f"Temp: {weather.get('temperature')}°C, {weather.get('windspeed')}km/h wind. Alert: {alert}"
+    
+    return {"status": "success", "weather": user_session_metadata["weather"]}
 
 @app.get("/api/languages")
 def get_languages():
@@ -49,8 +72,9 @@ async def chat_endpoint(
         if not user_query:
             return JSONResponse({"error": "No input provided"}, status_code=400)
             
-        # 2. Contextual LLM execution in selected TARGET language
-        reply = get_llm_advisory(user_query, chat_history, language)
+        # 2. Contextual LLM execution with WEATHER
+        weather_ctx = user_session_metadata["weather"]
+        reply = get_llm_advisory(user_query, chat_history, language, weather_ctx)
         
         # 3. BACKGROUND TASKS: Log to DB without blocking response
         background_tasks.add_task(save_chat, "anonymous_user_1", "user", user_query, language)

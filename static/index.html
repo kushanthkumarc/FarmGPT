@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="app-container">
         <!-- HEADER -->
@@ -18,7 +20,7 @@
                     <p>Online</p>
                 </div>
             </div>
-            
+
             <div class="lang-selector">
                 <select id="langSelect">
                     <option value="Hindi">Hindi (हिंदी)</option>
@@ -40,11 +42,13 @@
         <div class="chat-bg">
             <div id="chatBox" class="chat-box">
                 <div class="encryption-notice">
-                    <i class="fas fa-lock"></i> Messages are encrypted end-to-end. No one outside of this chat, not even WhatsApp, can read or listen to them.
+                    <i class="fas fa-lock"></i> Messages are encrypted end-to-end. No one outside of this chat, not even
+                    WhatsApp, can read or listen to them.
                 </div>
-                
+
                 <div class="message received">
-                    <span class="text">नमस्ते! 🌾<br>I am FarmGPT, your agricultural assistant. How can I help you today? Ask me about crops, fertilizers, weather, or farming tips!</span>
+                    <span class="text">नमस्ते! 🌾<br>I am FarmGPT, your agricultural assistant. How can I help you
+                        today? Ask me about crops, fertilizers, weather, or farming tips!</span>
                     <span class="time">Now</span>
                 </div>
             </div>
@@ -55,9 +59,10 @@
             <div class="input-wrapper">
                 <i class="far fa-smile icon"></i>
                 <input type="text" id="textInput" placeholder="Type a message">
-                <i class="fas fa-paperclip icon"></i>
+                <i class="fas fa-location-arrow icon" id="locationBtn" title="Sync Location"
+                    style="cursor:pointer; color:#008069;"></i>
             </div>
-            
+
             <button class="voice-btn" id="voiceBtn">
                 <i class="fas fa-microphone"></i>
             </button>
@@ -66,7 +71,8 @@
             </button>
         </div>
     </div>
-    
+
     <script src="app.js"></script>
 </body>
+
 </html>
