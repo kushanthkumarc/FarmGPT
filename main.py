@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +7,7 @@ import json
 
 from config import LANGUAGES, LANGUAGE_CODES
 from sarvam_api import transcribe_audio, get_llm_advisory, get_tts_audio
+from db import save_chat
 
 app = FastAPI(title="FarmGPT API")
 
@@ -28,6 +29,7 @@ def get_languages():
 
 @app.post("/api/chat")
 async def chat_endpoint(
+    background_tasks: BackgroundTasks,
     text: str = Form(None),
     audio: UploadFile = File(None),
     history: str = Form("[]"),
@@ -49,6 +51,10 @@ async def chat_endpoint(
             
         # 2. Contextual LLM execution in selected TARGET language
         reply = get_llm_advisory(user_query, chat_history, language)
+        
+        # 3. BACKGROUND TASKS: Log to DB without blocking response
+        background_tasks.add_task(save_chat, "anonymous_user_1", "user", user_query, language)
+        background_tasks.add_task(save_chat, "anonymous_user_1", "bot", reply, language)
         
         return {
             "query": user_query,

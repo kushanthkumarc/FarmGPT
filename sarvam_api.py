@@ -118,9 +118,8 @@ def get_llm_advisory(user_query: str, history: List[Dict], target_language: str)
     # 3. Cache the result
     cache_response(user_query, target_language, reply)
     
-    # 4. Save persistently to MongoDB Atlas
-    save_chat("anonymous_user_1", "user", user_query, target_language)
-    save_chat("anonymous_user_1", "bot", reply, target_language)
+    # [NOTE]: save_chat removed here and moved to background tasks in main.py
+    # to avoid network latency blocking the user response.
 
     return reply
 

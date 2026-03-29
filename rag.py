@@ -28,22 +28,30 @@ jina_ef = embedding_functions.JinaEmbeddingFunction(
     model_name="jina-embeddings-v3"
 )
 
+
+# Global collection cache
+_collection = None
+
 def get_collection():
-    return client.get_or_create_collection(
-        name=collection_name, 
-        embedding_function=jina_ef
-    )
+    global _collection
+    if _collection is None:
+        _collection = client.get_or_create_collection(
+            name=collection_name, 
+            embedding_function=jina_ef
+        )
+    return _collection
 
 def retrieve_context(query: str, n_results: int = 3) -> str:
     """Gets top k relevant passages from the Vector DB"""
     try:
         collection = get_collection()
-        if collection.count() == 0:
+        count = collection.count()
+        if count == 0:
             return ""
             
         results = collection.query(
             query_texts=[query],
-            n_results=min(n_results, collection.count())
+            n_results=min(n_results, count)
         )
         
         if not results or not results['documents']:
