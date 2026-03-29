@@ -1,10 +1,15 @@
 import os
 import tempfile
 import re
+import json
+import requests
 from typing import List, Dict
 
 from sarvamai import SarvamAI
-from config import SARVAM_API_KEY, STT_MODEL, LLM_MODEL, get_system_prompt
+from config import SARVAM_API_KEY, STT_MODEL, LLM_MODEL
+from rag import retrieve_context
+from db import get_cached_response, cache_response, save_chat
+from prompts import get_formatted_prompt
 
 client = SarvamAI(api_subscription_key=SARVAM_API_KEY) if SARVAM_API_KEY else None
 
@@ -35,26 +40,88 @@ def transcribe_audio(audio_bytes: bytes) -> str:
 
 
 def get_llm_advisory(user_query: str, history: List[Dict], target_language: str) -> str:
-    """Gets the LLM advice strictly bound to target_language."""
+    """
+    Core AI logic:
+    1. Check Redis Cache for identical queries.
+    2. RAG retrieval.
+    3. LLM synthesis.
+    4. Save to MongoDB Atlas.
+    """
     if not client:
         raise ValueError("SARVAM_API_KEY missing - configure your environment.")
 
-    # Apply strict language control
-    system_prompt = get_system_prompt(target_language)
-    
-    messages = [{"role": "system", "content": system_prompt}]
-    messages.extend(history[-6:])  # last 3 turns
-    messages.append({"role": "user", "content": user_query})
+    # 1. Check Redis Cache
+    cached = get_cached_response(user_query, target_language)
+    if cached:
+        print(f"[CACHE HIT] Serving response for: {user_query}")
+        return cached
 
-    response = client.chat.completions(
-        model=LLM_MODEL,
-        messages=messages,
-    )
+    # 2. Retrieval Augmented Generation (RAG)
+    rag_context = retrieve_context(user_query)
+
+    # REFACTORED:
+    # 1. System: EXPERT PERSONA + VECTOR KNOWLEDGE (Specific to this QUERY)
+    system_msg = get_formatted_prompt(rag_context, target_language)
     
-    reply = response.choices[0].message.content or ""
+    # 2. Assembling Message History
+    messages = [{"role": "system", "content": system_msg}]
     
-    # Clean reasoning tags if any
-    reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL).strip()
+    # Only use the last few turns of history to keep context focused
+    for old_msg in history[-6:]: 
+        messages.append(old_msg)
+        
+    # 3. Add CURRENT USER QUERY
+    messages.append({"role": "user", "content": user_query})
+    
+    print(f"📡 Sending Chat Context to Sarvam (Conversation turns: {len(messages)})")
+    
+    headers = {
+        "api-subscription-key": SARVAM_API_KEY,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": LLM_MODEL,
+        "messages": messages,
+        "temperature": 0.1 # Low temperature for diagnostic stability
+    }
+    
+    try:
+        # Added timeout=45 to prevent hanging the UI
+        response = requests.post(
+            "https://api.sarvam.ai/v1/chat/completions", 
+            headers=headers, 
+            json=payload,
+            timeout=45
+        )
+        response.raise_for_status()
+        data = response.json()
+        raw_reply = data['choices'][0]['message']['content'] or ""
+        
+        # 🧪 ROBUST THOUGHT STRIPPING (handles partial tags or mixed blocks)
+        # 1. Strip full tags
+        reply = re.sub(r'<think>.*?</think>', '', raw_reply, flags=re.DOTALL).strip()
+        # 2. Strip dangling opening tag if closing is missing
+        reply = re.sub(r'<think>.*', '', reply, flags=re.DOTALL).strip()
+        
+        print(f"DEBUG: Processed LLM Output (Len: {len(reply)}): {reply[:100]}...")
+        
+        if len(reply) < 5:
+            print("⚠️ WARNING: LLM returned an empty response after cleaning. Using fallback.")
+            reply = "I understand. I am analyzing the symptoms you mentioned. Could you also please share the approximate temperature and humidity in your area today?"
+
+    except Exception as e:
+        print(f"❌ LLM API Error: {e}")
+        if 'response' in locals() and hasattr(response, 'text'):
+            print(f"DEBUG: Response body: {response.text}")
+        return "I apologize, but I am currently having trouble connecting to my knowledge core. Please try again or visit your local KVK."
+    
+    # 3. Cache the result
+    cache_response(user_query, target_language, reply)
+    
+    # 4. Save persistently to MongoDB Atlas
+    save_chat("anonymous_user_1", "user", user_query, target_language)
+    save_chat("anonymous_user_1", "bot", reply, target_language)
+
     return reply
 
 def get_tts_audio(text: str, target_language_code: str) -> str:
@@ -88,3 +155,29 @@ def get_tts_audio(text: str, target_language_code: str) -> str:
     except Exception as e:
         print(f"TTS Error: {e}")
         raise e
+
+if __name__ == "__main__":
+    print("--- SARVAM API: LOCAL LOGIC CHECK ---")
+    if not SARVAM_API_KEY:
+        print("❌ Error: SARVAM_API_KEY is not set.")
+    else:
+        # Simple Logic Test
+        try:
+            test_query = "Hello, how are you?"
+            print(f"1. Testing LLM Advisory logic locally for: '{test_query}'...")
+            # Using empty history for a simple test
+            response = get_llm_advisory(test_query, [], "English")
+            print(f"✅ Success! Response preview: {response[:100]}...")
+            
+            print("\n2. Testing TTS logic locally...")
+            tts_data = get_tts_audio("Hello from Sarvam API", "en-IN")
+            if tts_data:
+                print(f"✅ Success! Received {len(tts_data)} bytes of audio data.")
+            else:
+                print("❌ TTS failed to return audio.")
+                
+        except Exception as e:
+            print(f"❌ Error during local check: {e}")
+            import traceback
+            traceback.print_exc()
+    print("--- CHECK COMPLETE ---")

@@ -1,0 +1,50 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]: 
+      - generic [ref=e7]:
+        - heading "FarmGPT" [level=2] [ref=e8]
+        - paragraph [ref=e9]: Online
+    - combobox [ref=e11] [cursor=pointer]:
+      - option "English"
+      - option "Hindi (हिंदी)" [selected]
+      - option "Bengali (বাংলা)"
+      - option "Tamil (தமிழ்)"
+      - option "Telugu (తెలుగు)"
+      - option "Marathi (मराठी)"
+      - option "Gujarati (ગુજરાતી)"
+      - option "Kannada (ಕನ್ನಡ)"
+      - option "Malayalam (മലയാളം)"
+      - option "Punjabi (ਪੰਜਾਬੀ)"
+      - option "Odia (ଓଡ଼ିଆ)"
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e15]: 
+      - text: Messages are encrypted end-to-end. No one outside of this chat, not even WhatsApp, can read or listen to them.
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - text: नमस्ते! 🌾
+        - text: I am FarmGPT, your agricultural assistant. How can I help you today? Ask me about crops, fertilizers, weather, or farming tips!
+      - generic [ref=e18]: Now
+    - generic [ref=e28]:
+      - text: My rice leaves are turning yellow
+      - generic [ref=e29]: 03:03 AM
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - text: "नमस्ते! मुझे दुःख है कि आपके धान के पत्ते पीले हो रहे हैं। कृपया मुझे इन प्रश्नों के उत्तर दें ताकि मैं सही कारण पहचान सकूं:"
+        - text: 1. क्या यह पीलापन पूरे पत्ते पर समान रूप से है या केवल कुछ हिस्सों (जैसे किनारे/नोक) पर?
+        - text: 2. क्या पत्तों पर कोई छेद, धब्बे, या कीड़े-डिमाग (जैसे पीले रंग के डिमाग) दिखाई दे रहे हैं?
+        - text: 3. क्या पत्ते मुरझाए हुए लग रहे हैं या आसानी से टूट रहे हैं?
+        - text: "(ध्यान दें: पीले पत्ते कई कारणों से हो सकते हैं - कीट, पोषक तत्वों की कमी, या जल प्रबंधन समस्याएं। सटीक निदान के लिए अतिरिक्त जानकारी आवश्यक है)"
+      - button " Play Audio" [ref=e33] [cursor=pointer]:
+        - generic [ref=e34]: 
+        - text: Play Audio
+      - generic [ref=e35]: 03:03 AM
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21] [cursor=pointer]: 
+      - textbox "Type a message" [active] [ref=e22]
+      - generic [ref=e23] [cursor=pointer]: 
+    - button "" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: 
+    - text: 

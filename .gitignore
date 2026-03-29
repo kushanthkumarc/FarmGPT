@@ -1,0 +1,44 @@
+# Environment Secrets
+.env
+.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+
+# Local Data & Databases
+chroma_data/
+*.sqlite3
+*.bin
+*.lock
+
+# Logs
+*.log
+
+# AI/Agent Metadata
+.gemini/
+.agent/
+.agents/
+brain/
+logs/
+
+# Temporary Test Scripts
+test_mongo.py
+test_mongo_v2.py
+test_chroma.py
+test_sarvam.py
+test_api.py
